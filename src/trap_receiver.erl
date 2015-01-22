@@ -15,9 +15,8 @@
     ]).
 
 start() ->
-    ok = snmpm:start_link(manager_opts()).
-    %, 
-    %snmpm:register_user("trap_receiver", ?MODULE, undefined).
+    ok = snmpm:start_link(manager_opts()),
+    snmpm:register_user("trap_receiver", ?MODULE, undefined).
 
 manager_opts() ->
     [
@@ -33,9 +32,9 @@ handle_error(ReqId, Reason, UserData) ->
     io:format("error ~p ~p ~p ~n", [ReqId, Reason, UserData]).
 
 %-spec handle_agent(Domain, Addr, pdu | trap | report | inform, SnmpInfo, UserData) -> Reply.
-handle_agent(Domain, Addr, trap, SnmpInfo, UserData) ->
+handle_agent({O1, O2, O3, O4}, Addr, trap, SnmpInfo, UserData) ->
     io:format("it's a trap (unknown agent)! ~p ~p ~p ~p ~n",[Domain, Addr, SnmpInfo, UserData]),
-    ignore;
+    {register, "trap_receiver", TargetName, AgentConfig};
 handle_agent(Domain, Addr, Type, SnmpInfo, UserData) ->
     io:format("agent ~p ~p ~p ~p ~p ~n",[Domain, Addr, Type, SnmpInfo, UserData]),
     ignore.
