@@ -1,0 +1,16 @@
+.eunit
+.rebar
+.deps_plt
+deps
+*.o
+*.beam
+*.app
+*.plt
+erl_crash.dump
+*.tar.gz
+_rel
+relx
+ebin
+.erlang.mk.*
+logs
+snmp/manager/db/snmpm_config_db
