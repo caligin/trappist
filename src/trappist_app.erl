@@ -5,7 +5,9 @@
 -export([stop/1]).
 
 start(_Type, _Args) ->
-	trappist_sup:start_link().
+	{ok, Supervisor} = trappist_sup:start_link(),
+    trap_receiver:add_handler(config_change_traps, []),
+    {ok, Supervisor}.
 
 stop(_State) ->
 	ok.

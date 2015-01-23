@@ -8,5 +8,7 @@ start_link() ->
 	supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-	Procs = [],
+	Procs = [
+        {trap_receiver, {trap_receiver, start_link, []}, permanent, brutal_kill, worker, [trap_receiver]}
+    ],
 	{ok, {{one_for_one, 1, 5}, Procs}}.

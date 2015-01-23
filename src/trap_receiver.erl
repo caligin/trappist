@@ -1,8 +1,8 @@
 -module(trap_receiver).
 -behaviour(snmpm_user).
 -export([
-    start/0,
-    manager_opts/0
+    start_link/0,
+    add_handler/2
     ]).
 -export([
     handle_error/3,
@@ -14,9 +14,14 @@
     handle_invalid_result/2
     ]).
 
-start() ->
+-define(TRAP_OID_OID, [1,3,6,1,6,3,1,1,4,1,0]).
+
+start_link() ->
     ok = snmpm:start_link(manager_opts()),
-    snmpm:register_user("trap_receiver", ?MODULE, undefined).
+    gen_event:start_link({local, ?MODULE}).
+
+add_handler(Handler, Args) ->
+    gen_event:add_handler(?MODULE, Handler, Args).
 
 manager_opts() ->
     [
@@ -27,36 +32,41 @@ manager_opts() ->
         {def_user_mod, ?MODULE}
     ].
 
-%-spec handle_error(ReqId, Reason, UserData) -> void().
 handle_error(ReqId, Reason, UserData) ->
     io:format("error ~p ~p ~p ~n", [ReqId, Reason, UserData]).
 
-%-spec handle_agent(Domain, Addr, pdu | trap | report | inform, SnmpInfo, UserData) -> Reply.
-handle_agent({O1, O2, O3, O4}, Addr, trap, SnmpInfo, UserData) ->
+handle_agent(Domain, Addr, trap, {_, _, Payload} = SnmpInfo, UserData) ->
     io:format("it's a trap (unknown agent)! ~p ~p ~p ~p ~n",[Domain, Addr, SnmpInfo, UserData]),
-    {register, "trap_receiver", TargetName, AgentConfig};
+    {TrapOid, Varbinds} = extract_data(Payload),
+    gen_event:notify(?MODULE, {Domain, TrapOid, Varbinds}),
+    ignore;
 handle_agent(Domain, Addr, Type, SnmpInfo, UserData) ->
     io:format("agent ~p ~p ~p ~p ~p ~n",[Domain, Addr, Type, SnmpInfo, UserData]),
     ignore.
 
-%-spec handle_pdu(TargetName, ReqId, SnmpPduInfo, UserData) -> void().
 handle_pdu(_TargetName, _ReqId, _SnmpPduInfo, _UserData) ->
     io:format("pdu").
 
-%-spec handle_trap(TargetName, SnmpTrapInfo, UserData) -> Reply.
 handle_trap(TargetName, SnmpTrapInfo, UserData) ->
     io:format("it's a trap (known agent)! ~p ~p ~p ~n",[TargetName, SnmpTrapInfo, UserData]),
     ignore.
 
-%-spec handle_inform(TargetName, SnmpInformInfo, UserData) -> Reply.
 handle_inform(TargetName, SnmpInformInfo, UserData) -> 
     io:format("inform ~p ~p ~p ~n",[TargetName, SnmpInformInfo, UserData]),
     ignore.
 
-%-spec handle_report(TargetName, SnmpReportInfo, UserData) -> Reply.
 handle_report(TargetName, SnmpReportInfo, UserData) ->
     io:format("report ~p ~p ~p ~n",[TargetName, SnmpReportInfo, UserData]).
 
-%-spec handle_invalid_result(IN, OUT) -> void().
 handle_invalid_result(IN, OUT) ->
     io:format("BABUM ~p ~p ~n",[IN, OUT]).
+
+extract_data(Payload) ->
+    extract_data(Payload, [], []).
+
+extract_data([{varbind, ?TRAP_OID_OID, 'OBJECT IDENTIFIER', Value, _Index} | Others], Varbinds, []) ->
+    extract_data(Others, Varbinds, [Value]);
+extract_data([{varbind, Oid, Type, Value, _Index} | Others], Varbinds, TrapOid) ->
+    extract_data(Others, [{Oid, Type, Value} | Varbinds], TrapOid);
+extract_data([], Varbinds, [TrapOid]) ->
+    {TrapOid, Varbinds}.
