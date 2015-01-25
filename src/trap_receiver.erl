@@ -35,6 +35,7 @@ manager_opts() ->
 handle_error(ReqId, Reason, UserData) ->
     io:format("error ~p ~p ~p ~n", [ReqId, Reason, UserData]).
 
+% TODO: V1 traps have different form and do not pattern-patch with this signature
 handle_agent(Domain, Addr, trap, {_, _, Payload} = SnmpInfo, UserData) ->
     io:format("it's a trap (unknown agent)! ~p ~p ~p ~p ~n",[Domain, Addr, SnmpInfo, UserData]),
     {TrapOid, Varbinds} = extract_data(Payload),

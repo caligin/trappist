@@ -15,8 +15,11 @@ init([]) ->
 handle_event({Address, [1,3,6,1,6,3,1,1,5,1], _SnmpInfo}, []) ->
     io:format("~p cold restart, check for config changes~n", [Address]),
     {ok, []};
+handle_event({Address, [1,3,6,1,4,1,9,9,43,2,0,1], _SnmpInfo}, []) ->
+    io:format("~p running config undergoing changes [CISCO.1], check for config changes~n", [Address]),
+    {ok, []};
 handle_event({Address, [1,3,6,1,4,1,9,9,43,2,0,2], _SnmpInfo}, []) ->
-    io:format("~p running config change [CISCO], check for config changes~n", [Address]),
+    io:format("~p running config change [CISCO.2], check for config changes~n", [Address]),
     {ok, []};
 handle_event({Address, TrapOid, _SnmpInfo}, []) ->
     io:format("uninteresting trap ~p from ~p~n", [TrapOid, Address]),
