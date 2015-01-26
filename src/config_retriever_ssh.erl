@@ -2,6 +2,7 @@
 -behaviour(gen_fsm).
 
 %% API.
+-export([start_link/2]).
 -export([start/2]).
 
 %% gen_fsm.
@@ -33,6 +34,10 @@
 -spec start(_T, _CB) -> {ok, pid()}.
 start(Target, {_CallbackModule, _CallbackFun} = CB) ->
     gen_fsm:start(?MODULE, [Target, CB], []).
+
+-spec start_link(_T, _CB) -> {ok, pid()}.
+start_link(Target, {_CallbackModule, _CallbackFun} = CB) ->
+    gen_fsm:start_link(?MODULE, [Target, CB], []).
 
 %% gen_fsm.
 
